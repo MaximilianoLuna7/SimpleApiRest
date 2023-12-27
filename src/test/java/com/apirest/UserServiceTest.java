@@ -12,6 +12,8 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,5 +141,28 @@ public class UserServiceTest {
 
         // Ensure that the repository.findById method was not called
         verify(userRepository, never()).findById(any());
+    }
+
+    @Test
+    void getAllUsersShouldReturnListOfAllUsers() {
+        // Given a list of users
+        List<UserEntity> usersList = Arrays.asList(
+            new UserEntity(1L, "John", "Doe", "john.doe@example.com"),
+            new UserEntity(2L, "Mike", "Smith", "mike.smith@example.com"),
+            new UserEntity(3L, "Sara", "Jones", "sara.jones@example.com")
+        );
+
+        // Simulate that findAll method in the repository returns a list of users
+        when(userRepository.findAll()).thenReturn(usersList);
+
+        // Perform the getAllUsers operation
+        List<UserEntity> allUsersList = userService.getAllUsers();
+
+        // Assert that the list of users obtained is correct
+        assertThat(allUsersList).isNotNull();
+        assertThat(allUsersList).hasSize(3);
+        assertThat(allUsersList).containsExactlyElementsOf(usersList);
+
+        verify(userRepository, times(1)).findAll();
     }
 }
