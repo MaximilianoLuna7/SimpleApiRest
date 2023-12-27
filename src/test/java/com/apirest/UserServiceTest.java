@@ -1,5 +1,6 @@
 package com.apirest;
 
+import com.apirest.exceptions.UserNotFoundException;
 import com.apirest.exceptions.UserValidationException;
 import com.apirest.models.UserEntity;
 import com.apirest.repositories.UserRepository;
@@ -107,5 +108,22 @@ public class UserServiceTest {
 
         // Assert that the found user is equal to the searched user
         assertThat(userFound).isEqualTo(searchedUser);
+    }
+
+    @Test
+    void getUserByIdWithNonExistentIdThrowsException() {
+        // Given a non-existent user id
+        Long nonExistentUserId = 999L;
+
+        // Simulate that the findById method in the repository returns an empty optional of UserEntity when user id is not found
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        // When attempting to get a user with non-existent ID should throw a UserNotFoundException
+        assertThatThrownBy(() -> userService.getUserById(nonExistentUserId))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
+
+        // Ensure that the repository.findBiId method was called exactly once with the provided id
+        verify(userRepository, times(1)).findById(nonExistentUserId);
     }
 }
