@@ -25,4 +25,9 @@ public class UserService {
         }
 
     }
+
+    public UserEntity getUserById(Long searchedUserId) {
+        return userRepository.findById(searchedUserId)
+                .orElse(null);
+    }
 }
