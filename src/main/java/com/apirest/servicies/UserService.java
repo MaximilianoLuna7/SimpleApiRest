@@ -29,6 +29,9 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserEntity getUserById(Long searchedUserId) {
+        if (searchedUserId == null) {
+            throw new IllegalArgumentException("User ID cannot be null.");
+        }
         return userRepository.findById(searchedUserId)
                 .orElseThrow(() -> new  UserNotFoundException("User with ID: " + searchedUserId + " not found."));
     }
