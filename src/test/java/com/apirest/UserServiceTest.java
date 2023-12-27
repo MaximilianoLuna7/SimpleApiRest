@@ -118,12 +118,26 @@ public class UserServiceTest {
         // Simulate that the findById method in the repository returns an empty optional of UserEntity when user id is not found
         when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
-        // When attempting to get a user with non-existent ID should throw a UserNotFoundException
+        // When attempting to get a user with non-existent id should throw a UserNotFoundException
         assertThatThrownBy(() -> userService.getUserById(nonExistentUserId))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
 
         // Ensure that the repository.findBiId method was called exactly once with the provided id
         verify(userRepository, times(1)).findById(nonExistentUserId);
+    }
+
+    @Test
+    void getUserByNullIdShouldThrowsException() {
+        // Given a null user id
+        Long nullUserId = null;
+
+        // When attempting to get a user with null id should throw a UserNotFoundException
+        assertThatThrownBy(() -> userService.getUserById(nullUserId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("User ID cannot be null");
+
+        // Ensure that the repository.findById method was not called
+        verify(userRepository, never()).findById(any());
     }
 }
