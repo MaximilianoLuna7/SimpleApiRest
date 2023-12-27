@@ -1,5 +1,6 @@
 package com.apirest.servicies;
 
+import com.apirest.exceptions.UserNotFoundException;
 import com.apirest.exceptions.UserValidationException;
 import com.apirest.models.UserEntity;
 import com.apirest.repositories.UserRepository;
@@ -26,8 +27,9 @@ public class UserService {
 
     }
 
+    @Transactional(readOnly = true)
     public UserEntity getUserById(Long searchedUserId) {
         return userRepository.findById(searchedUserId)
-                .orElse(null);
+                .orElseThrow(() -> new  UserNotFoundException("User with ID: " + searchedUserId + " not found."));
     }
 }
