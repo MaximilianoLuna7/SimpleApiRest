@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -84,5 +86,26 @@ public class UserServiceTest {
 
         // Ensure that the save method was called exactly once wih the provided user
         verify(userRepository, times(1)).save(userWithInvalidFields);
+    }
+
+    @Test
+    void getUserByIdShouldReturnCorrectUser() {
+        // Given an Id and user to search
+        Long searchedUserId = 1L;
+        UserEntity searchedUser = UserEntity.builder()
+                .id(searchedUserId)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .build();
+
+        // Simulate that the findById method in the repository return an optional of searchedUser when find id user
+        when(userRepository.findById(searchedUserId)).thenReturn(Optional.of(searchedUser));
+
+        // Perform the findUserById operation
+        UserEntity userFound = userService.getUserById(searchedUserId);
+
+        // Assert that the found user is equal to the searched user
+        assertThat(userFound).isEqualTo(searchedUser);
     }
 }
