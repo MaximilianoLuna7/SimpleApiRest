@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -41,5 +42,15 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserEntity> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Transactional
+    public UserEntity updateUserById(Long userIdToUpdate, UserEntity updatedUser) {
+        UserEntity userToUpdate = userRepository.findById(userIdToUpdate)
+                .orElse(null);
+        userToUpdate.setFirstName(updatedUser.getFirstName());
+        userToUpdate.setLastName(updatedUser.getLastName());
+        userToUpdate.setEmail(updatedUser.getEmail());
+        return userRepository.save(userToUpdate);
     }
 }
