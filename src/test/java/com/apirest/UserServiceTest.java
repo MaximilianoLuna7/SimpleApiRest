@@ -165,4 +165,26 @@ public class UserServiceTest {
 
         verify(userRepository, times(1)).findAll();
     }
+
+    @Test
+    void updateUserShouldReturnUpdatedUser() {
+        //Given user id to update, existing user with this id and the expected updated user with new data
+        Long userIdToUpdate = 1L;
+        UserEntity existingUser = new UserEntity(userIdToUpdate, "John", "Doe", "john.doe@example.com");
+        UserEntity expectedUpdatedUser = new UserEntity(userIdToUpdate, "UpdatedFirstName", "UpdatedLastName", "john.doe@example.com");
+
+        // Simulate that findById and save methods of the repository performing the update procedure
+        when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(UserEntity.class))).thenReturn(expectedUpdatedUser);
+
+        // Perform the updateUser operation
+        UserEntity updatedUser = userService.updateUserById(userIdToUpdate, expectedUpdatedUser);
+
+        // Assert that the updated user is correct
+        assertThat(updatedUser).isNotNull();
+        assertThat(updatedUser).isEqualTo(expectedUpdatedUser);
+
+        verify(userRepository, times(1)).findById(userIdToUpdate);
+        verify(userRepository, times(1)).save(any(UserEntity.class));
+    }
 }
