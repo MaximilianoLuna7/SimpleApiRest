@@ -187,4 +187,26 @@ public class UserServiceTest {
         verify(userRepository, times(1)).findById(userIdToUpdate);
         verify(userRepository, times(1)).save(any(UserEntity.class));
     }
+
+    @Test
+    void updatedUserShouldThrowsExceptionForNonExistentUser() {
+        // Given a non-existent user id and an expected updated user
+        Long nonExistentUserId = 999L;
+        UserEntity expectedUpdatedUser = UserEntity.builder()
+                .firstName("UpdatedFirstName")
+                .lastName("UpdatedLastName")
+                .email("updated@example.com")
+                .build();
+
+        // Simulate that the findById method return an empty optional for a non-existent user id
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        // When attempting update a user with a non-existent user should throw a UserNotFoundException
+        assertThatThrownBy(() -> userService.updateUserById(nonExistentUserId, expectedUpdatedUser))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
+
+        verify(userRepository, times(1)).findById(nonExistentUserId);
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
 }
