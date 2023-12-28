@@ -26,7 +26,6 @@ public class UserService {
         } catch (ConstraintViolationException e) {
             throw new UserValidationException("Validation error when creating user", e);
         }
-
     }
 
     @Transactional(readOnly = true)
@@ -54,6 +53,8 @@ public class UserService {
 
 
     public void deleteUserById(Long userIdToDelete) {
+        UserEntity userToDelete = getUserById(userIdToDelete);
+
         userRepository.deleteById(userIdToDelete);
     }
 }
