@@ -212,12 +212,35 @@ public class UserServiceTest {
 
     @Test
     void deleteUserByIdShouldDeleteUser() {
+        // Given user id to delete and an user to delete
         Long userIdToDelete = 1L;
+        UserEntity userToDelete = UserEntity.builder()
+                .id(userIdToDelete)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .build();
+
+        when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(userToDelete));
 
         // Perform the deleteUser operation
         userService.deleteUserById(userIdToDelete);
 
         // Ensure that the deleteById method on the repository was called once
         verify(userRepository, times(1)).deleteById(userIdToDelete);
+    }
+
+    @Test
+    void deleteUserShouldThrowExceptionForNonExistentUserId() {
+        // Given a non-existent user id
+        Long nonExistentUserId = 999L;
+
+        // Simulate that the findById method on the repository return an empty optional for a non-existent user id
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        // When attempting to delete user with non-existent user id should throw a UserNotFoundException
+        assertThatThrownBy(() -> userService.deleteUserById(nonExistentUserId))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
     }
 }
