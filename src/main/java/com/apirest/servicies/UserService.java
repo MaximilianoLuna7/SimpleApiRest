@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -51,5 +50,10 @@ public class UserService {
         userToUpdate.setLastName(updatedUser.getLastName());
         userToUpdate.setEmail(updatedUser.getEmail());
         return userRepository.save(userToUpdate);
+    }
+
+
+    public void deleteUserById(Long userIdToDelete) {
+        userRepository.deleteById(userIdToDelete);
     }
 }
