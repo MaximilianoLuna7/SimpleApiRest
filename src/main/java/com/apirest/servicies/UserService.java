@@ -46,8 +46,7 @@ public class UserService {
 
     @Transactional
     public UserEntity updateUserById(Long userIdToUpdate, UserEntity updatedUser) {
-        UserEntity userToUpdate = userRepository.findById(userIdToUpdate)
-                .orElse(null);
+        UserEntity userToUpdate = getUserById(userIdToUpdate);
         userToUpdate.setFirstName(updatedUser.getFirstName());
         userToUpdate.setLastName(updatedUser.getLastName());
         userToUpdate.setEmail(updatedUser.getEmail());
