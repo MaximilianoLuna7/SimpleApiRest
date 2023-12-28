@@ -209,4 +209,15 @@ public class UserServiceTest {
         verify(userRepository, times(1)).findById(nonExistentUserId);
         verify(userRepository, never()).save(any(UserEntity.class));
     }
+
+    @Test
+    void deleteUserByIdShouldDeleteUser() {
+        Long userIdToDelete = 1L;
+
+        // Perform the deleteUser operation
+        userService.deleteUserById(userIdToDelete);
+
+        // Ensure that the deleteById method on the repository was called once
+        verify(userRepository, times(1)).deleteById(userIdToDelete);
+    }
 }
