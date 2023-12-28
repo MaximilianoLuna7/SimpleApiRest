@@ -136,7 +136,7 @@ public class UserServiceTest {
 
         // When attempting to get a user with null id should throw a UserNotFoundException
         assertThatThrownBy(() -> userService.getUserById(nullUserId))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("User ID cannot be null");
 
         // Ensure that the repository.findById method was not called
@@ -226,7 +226,8 @@ public class UserServiceTest {
         // Perform the deleteUser operation
         userService.deleteUserById(userIdToDelete);
 
-        // Ensure that the deleteById method on the repository was called once
+        // Ensure that the findById and deleteById methods on the repository was called once
+        verify(userRepository, times(1)).findById(userIdToDelete);
         verify(userRepository, times(1)).deleteById(userIdToDelete);
     }
 
@@ -242,5 +243,8 @@ public class UserServiceTest {
         assertThatThrownBy(() -> userService.deleteUserById(nonExistentUserId))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
+
+        verify(userRepository, times(1)).findById(nonExistentUserId);
+        verify(userRepository, never()).deleteById(anyLong());
     }
 }
