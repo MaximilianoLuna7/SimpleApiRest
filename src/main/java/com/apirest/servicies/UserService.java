@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class UserService {
@@ -19,6 +20,7 @@ public class UserService {
 
     @Transactional
     public UserEntity addUser(UserEntity userToAdd) {
+        validateUser(userToAdd);
         try {
             return userRepository.save(userToAdd);
         } catch (DataIntegrityViolationException e) {
@@ -30,9 +32,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserEntity getUserById(Long searchedUserId) {
-        if (searchedUserId == null) {
-            throw new IllegalArgumentException("User ID cannot be null.");
-        }
+        Objects.requireNonNull(searchedUserId, "User ID cannot be null.");
+
         return userRepository.findById(searchedUserId)
                 .orElseThrow(() -> new  UserNotFoundException("User with ID: " + searchedUserId + " not found."));
     }
@@ -44,17 +45,33 @@ public class UserService {
 
     @Transactional
     public UserEntity updateUserById(Long userIdToUpdate, UserEntity updatedUser) {
+        Objects.requireNonNull(userIdToUpdate, "User ID cannot be null.");
+
         UserEntity userToUpdate = getUserById(userIdToUpdate);
-        userToUpdate.setFirstName(updatedUser.getFirstName());
-        userToUpdate.setLastName(updatedUser.getLastName());
-        userToUpdate.setEmail(updatedUser.getEmail());
+        validateUser(updatedUser);
+
+        updateUserData(userToUpdate, updatedUser);
         return userRepository.save(userToUpdate);
     }
 
 
+    @Transactional
     public void deleteUserById(Long userIdToDelete) {
-        UserEntity userToDelete = getUserById(userIdToDelete);
+        getUserById(userIdToDelete);
 
         userRepository.deleteById(userIdToDelete);
+    }
+
+    private void validateUser(UserEntity userToValidate) {
+        Objects.requireNonNull(userToValidate, "The user cannot be null.");
+        Objects.requireNonNull(userToValidate.getFirstName(), "The 'firstName' field cannot be null.");
+        Objects.requireNonNull(userToValidate.getLastName(), "The 'lastName' field cannot be null.");
+        Objects.requireNonNull(userToValidate.getEmail(), "The 'email' field cannot be null.");
+    }
+
+    private void updateUserData(UserEntity userToUpdate, UserEntity updatedUser) {
+        userToUpdate.setFirstName(updatedUser.getFirstName());
+        userToUpdate.setLastName(updatedUser.getLastName());
+        userToUpdate.setEmail(updatedUser.getEmail());
     }
 }
