@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,5 +82,23 @@ public class UserRepositoryTests {
 
         // Then assert that optional is empty
         assertThat(OptionalUserFound).isEmpty();
+    }
+
+    @Test
+    void findAllShouldReturnAllUsers() {
+        // Given two users in database
+        UserEntity secondUser = UserEntity.builder()
+                .firstName("Mike")
+                .lastName("Smith")
+                .email("mike.smith@example.com")
+                .build();
+        userRepository.save(firstUser);
+        userRepository.save(secondUser);
+
+        // When finding all users
+        List<UserEntity> allUsersList = userRepository.findAll();
+
+        // Then assert that get list of users
+        assertThat(allUsersList).hasSize(2);
     }
 }
