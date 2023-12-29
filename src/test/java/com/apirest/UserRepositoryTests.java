@@ -101,4 +101,17 @@ public class UserRepositoryTests {
         // Then assert that get list of users
         assertThat(allUsersList).hasSize(2);
     }
+
+    @Test
+    void deleteByIdShouldDeleteUser() {
+        // Given user in database
+        UserEntity userInDB = userRepository.save(firstUser);
+
+        // When deleting user by id
+        userRepository.deleteById(userInDB.getId());
+
+        // Then assert that user is deleted
+        Optional<UserEntity> deletedUser = userRepository.findById(userInDB.getId());
+        assertThat(deletedUser).isEmpty();
+    }
 }
