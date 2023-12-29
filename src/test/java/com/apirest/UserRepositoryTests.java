@@ -70,4 +70,16 @@ public class UserRepositoryTests {
         assertThat(OptionalUserFound).isNotEmpty();
         assertThat(OptionalUserFound.get()).isEqualTo(userInDB);
     }
+
+    @Test
+    void findByIdShouldReturnEmptyOptionalForNonExistentId() {
+        // Given non-existent id
+        Long nonExistentUserId = 999L;
+
+        // When finding user by non-existent id
+        Optional<UserEntity> OptionalUserFound = userRepository.findById(nonExistentUserId);
+
+        // Then assert that optional is empty
+        assertThat(OptionalUserFound).isEmpty();
+    }
 }
