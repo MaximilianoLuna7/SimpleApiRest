@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -56,4 +58,16 @@ public class UserRepositoryTests {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @Test
+    void findByIdShouldReturnOptionalOfUserEntity() {
+        // Given user in database
+        UserEntity userInDB = userRepository.save(firstUser);
+
+        // When finding user by id
+        Optional<UserEntity> OptionalUserFound = userRepository.findById(userInDB.getId());
+
+        // Then assert that it matches the user in database
+        assertThat(OptionalUserFound).isNotEmpty();
+        assertThat(OptionalUserFound.get()).isEqualTo(userInDB);
+    }
 }
