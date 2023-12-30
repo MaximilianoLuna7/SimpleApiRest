@@ -114,4 +114,31 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$[1].lastName").value(usersList.get(1).getLastName()))
                 .andExpect(jsonPath("$[1].email").value(usersList.get(1).getEmail()));
     }
+
+    @Test
+    void updateUserShouldReturnUpdatedUser() throws Exception {
+        // Given
+        Long userIdToUpdate = 1L;
+        UserEntity updatedUser = UserEntity.builder()
+                .id(userIdToUpdate)
+                .firstName("UpdatedFirstName")
+                .lastName("UpdatedLastName")
+                .email("updated.email@example.com")
+                .build();
+
+        when(userService.updateUserById(eq(userIdToUpdate), any(UserEntity.class))).thenReturn(updatedUser);
+
+        // When
+        ResultActions result = mockMvc.perform(put("/api/users/{id}/update", userIdToUpdate)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedUser)));
+
+        // Then
+        result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(updatedUser.getId()))
+                .andExpect(jsonPath("$.firstName").value(updatedUser.getFirstName()))
+                .andExpect(jsonPath("$.lastName").value(updatedUser.getLastName()))
+                .andExpect(jsonPath("$.email").value(updatedUser.getEmail()));
+    }
 }
