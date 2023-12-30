@@ -1,4 +1,4 @@
-package com.apirest;
+package com.apirest.repositories;
 
 import com.apirest.models.UserEntity;
 import com.apirest.repositories.UserRepository;

@@ -1,4 +1,4 @@
-package com.apirest;
+package com.apirest.servicies;
 
 import com.apirest.exceptions.UserNotFoundException;
 import com.apirest.exceptions.UserValidationException;
