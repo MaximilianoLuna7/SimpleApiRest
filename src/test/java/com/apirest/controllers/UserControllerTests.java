@@ -55,4 +55,32 @@ public class UserControllerTests {
         // Verify that the addUser method in the service was called exactly once
         verify(userService, times(1)).addUser(any(UserEntity.class));
     }
+
+    @Test
+    void getUserShouldReturnUser() throws Exception {
+        // Given
+        Long userIdToGet = 1L;
+        UserEntity userToGet = UserEntity.builder()
+                .id(userIdToGet)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .build();
+
+        when(userService.getUserById(userIdToGet)).thenReturn(userToGet);
+
+        // When
+        ResultActions response = mockMvc.perform(get("/api/users/{userIdToCreate}", userIdToGet)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        // Then
+        response.andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userIdToGet))
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.lastName").value("Doe"))
+                .andExpect(jsonPath("$.email").value("john.doe@example.com"));
+
+        // Verify that the service method was called with the correct argument
+        verify(userService, times(1)).getUserById(userIdToGet);
+    }
 }
