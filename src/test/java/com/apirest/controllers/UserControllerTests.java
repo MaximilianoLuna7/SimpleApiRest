@@ -141,4 +141,20 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.lastName").value(updatedUser.getLastName()))
                 .andExpect(jsonPath("$.email").value(updatedUser.getEmail()));
     }
+
+    @Test
+    void deleteUserShouldReturnOk() throws Exception {
+        // Given
+        Long userIdToDelete = 1L;
+
+        // When
+        ResultActions result = mockMvc.perform(delete("/api/users/{id}/delete", userIdToDelete)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        // Then
+        result.andExpect(status().isOk());
+
+        // Verify that the service method was called with the correct argument
+        verify(userService, times(1)).deleteUserById(eq(userIdToDelete));
+    }
 }
