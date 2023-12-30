@@ -42,7 +42,7 @@ Este proyecto es una API REST desarrollada con Spring Boot que presenta una impl
    ```bash
    ./mvnw spring-boot:run
 3. **Acceder a la API:**
-La API estará disponible en http://localhost:8080.
+   La API estará disponible en http://localhost:8080.
 
 ## Contribuciones
 ¡Contribuciones son bienvenidas! Si encuentras algún problema o tienes ideas para mejoras, no dudes en abrir un problema o enviar una solicitud de extracción.
