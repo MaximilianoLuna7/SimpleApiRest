@@ -1,8 +1,6 @@
 package com.apirest.repositories;
 
 import com.apirest.models.UserEntity;
-import com.apirest.repositories.UserRepository;
-import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
