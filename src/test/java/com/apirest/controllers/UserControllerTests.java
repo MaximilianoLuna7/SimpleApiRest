@@ -12,6 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -82,5 +85,33 @@ public class UserControllerTests {
 
         // Verify that the service method was called with the correct argument
         verify(userService, times(1)).getUserById(userIdToGet);
+    }
+
+    @Test
+    void getAllUsersShouldReturnListOfUsers() throws Exception {
+        // Given
+        List<UserEntity> usersList = Arrays.asList(
+                UserEntity.builder().id(1L).firstName("John").lastName("Doe").email("john.doe@example.com").build(),
+                UserEntity.builder().id(2L).firstName("Mike").lastName("Smith").email("mike.smith@example.com").build()
+        );
+
+        when(userService.getAllUsers()).thenReturn(usersList);
+
+        // When
+        ResultActions result = mockMvc.perform(get("/api/users")
+                .contentType(MediaType.APPLICATION_JSON));
+
+        // Then
+        result.andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.size()").value(usersList.size()))
+                .andExpect(jsonPath("$[0].id").value(usersList.get(0).getId()))
+                .andExpect(jsonPath("$[0].firstName").value(usersList.get(0).getFirstName()))
+                .andExpect(jsonPath("$[0].lastName").value(usersList.get(0).getLastName()))
+                .andExpect(jsonPath("$[0].email").value(usersList.get(0).getEmail()))
+                .andExpect(jsonPath("$[1].id").value(usersList.get(1).getId()))
+                .andExpect(jsonPath("$[1].firstName").value(usersList.get(1).getFirstName()))
+                .andExpect(jsonPath("$[1].lastName").value(usersList.get(1).getLastName()))
+                .andExpect(jsonPath("$[1].email").value(usersList.get(1).getEmail()));
     }
 }
