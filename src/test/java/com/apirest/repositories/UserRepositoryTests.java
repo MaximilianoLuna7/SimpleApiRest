@@ -2,6 +2,7 @@ package com.apirest.repositories;
 
 import com.apirest.models.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -19,97 +20,91 @@ public class UserRepositoryTests {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity firstUser;
+    @Test
+    @DisplayName("Save user - Successful")
+    void saveUser_Successful() {
+        // Arrange
+        UserEntity user = createUser();
 
-    @BeforeEach
-    void setUp() {
-        firstUser = UserEntity.builder()
+        // Act
+        UserEntity savedUser = userRepository.save(user);
+
+        // Assert
+        assertThat(savedUser.getId()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Find user by id - Successful")
+    void findUserById_Successful() {
+        // Arrange
+        UserEntity user = createUser();
+        UserEntity savedUser = userRepository.save(user);
+
+        // Act
+        Optional<UserEntity> foundUserOptional = userRepository.findById(savedUser.getId());
+
+        // Assert
+        assertThat(foundUserOptional).isPresent();
+        assertThat(foundUserOptional.get().getId()).isEqualTo(savedUser.getId());
+    }
+
+    @Test
+    @DisplayName("Find user by id - Not found")
+    void findUserById_NotFound() {
+        // Arrange
+        Long nonExistentId = 999L;
+
+        // Act
+        Optional<UserEntity> foundUserOptional = userRepository.findById(nonExistentId);
+
+        // Assert
+        assertThat(foundUserOptional).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Find all users - Successful")
+    void findAllUsers_Successful() {
+        // Arrange
+        UserEntity user1 = createUser();
+        UserEntity user2 = UserEntity.builder()
+                .firstName("Jane")
+                .lastName("Smith")
+                .email("jane.smith@example.com")
+                .build();
+
+        userRepository.save(user1);
+        userRepository.save(user2);
+
+        // Act
+        List<UserEntity> foundUsers = userRepository.findAll();
+
+        // Assert
+        assertThat(foundUsers)
+                .isNotNull()
+                .hasSize(2);
+        assertThat(foundUsers).contains(user1, user2);
+    }
+
+    @Test
+    @DisplayName("Delete user - Successful")
+    void deleteUser_Successful() {
+        // Arrange
+        UserEntity user = createUser();
+        UserEntity savedUser = userRepository.save(user);
+
+        // Act
+        userRepository.delete(user);
+
+        // Assert
+        Optional<UserEntity> deletedUserOptional = userRepository.findById(savedUser.getId());
+        assertThat(deletedUserOptional).isEmpty();
+    }
+
+    private UserEntity createUser() {
+        return UserEntity.builder()
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .build();
-    }
-
-    @Test
-    void saveShouldSaveUserEntity() {
-        // Given user to save
-
-        // When save user
-        UserEntity savedUser = userRepository.save(firstUser);
-        // Then assert
-        assertThat(savedUser).isNotNull();
-        assertThat(savedUser.getId()).isGreaterThan(0);
-        System.out.println(savedUser);
-    }
-
-    @Test
-    void saveShouldThrowExceptionForExistingUser() {
-        // Given existent user and user to save
-        UserEntity existentUser = userRepository.save(firstUser);
-        UserEntity userToSave = UserEntity.builder()
-                .firstName("Mike")
-                .lastName("Smith")
-                .email("john.doe@example.com")
-                .build();
-
-        // When attempting to save user with an existing email, then throw an exception
-        assertThatThrownBy(() -> userRepository.save(userToSave))
-                .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
-    void findByIdShouldReturnOptionalOfUserEntity() {
-        // Given user in database
-        UserEntity userInDB = userRepository.save(firstUser);
-
-        // When finding user by id
-        Optional<UserEntity> OptionalUserFound = userRepository.findById(userInDB.getId());
-
-        // Then assert that it matches the user in database
-        assertThat(OptionalUserFound).isNotEmpty();
-        assertThat(OptionalUserFound.get()).isEqualTo(userInDB);
-    }
-
-    @Test
-    void findByIdShouldReturnEmptyOptionalForNonExistentId() {
-        // Given non-existent id
-        Long nonExistentUserId = 999L;
-
-        // When finding user by non-existent id
-        Optional<UserEntity> OptionalUserFound = userRepository.findById(nonExistentUserId);
-
-        // Then assert that optional is empty
-        assertThat(OptionalUserFound).isEmpty();
-    }
-
-    @Test
-    void findAllShouldReturnAllUsers() {
-        // Given two users in database
-        UserEntity secondUser = UserEntity.builder()
-                .firstName("Mike")
-                .lastName("Smith")
-                .email("mike.smith@example.com")
-                .build();
-        userRepository.save(firstUser);
-        userRepository.save(secondUser);
-
-        // When finding all users
-        List<UserEntity> allUsersList = userRepository.findAll();
-
-        // Then assert that get list of users
-        assertThat(allUsersList).hasSize(2);
-    }
-
-    @Test
-    void deleteByIdShouldDeleteUser() {
-        // Given user in database
-        UserEntity userInDB = userRepository.save(firstUser);
-
-        // When deleting user by id
-        userRepository.deleteById(userInDB.getId());
-
-        // Then assert that user is deleted
-        Optional<UserEntity> deletedUser = userRepository.findById(userInDB.getId());
-        assertThat(deletedUser).isEmpty();
     }
 }

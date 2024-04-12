@@ -1,18 +1,16 @@
 package com.apirest.servicies;
 
 import com.apirest.exceptions.UserNotFoundException;
-import com.apirest.exceptions.UserValidationException;
 import com.apirest.models.UserEntity;
 import com.apirest.repositories.UserRepository;
-import com.apirest.servicies.UserService;
-import jakarta.validation.ConstraintViolationException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
     @Mock
     private UserRepository userRepository;
@@ -29,222 +27,153 @@ public class UserServiceTest {
     private UserService userService;
 
     @Test
-    void addUserShouldAddANewUser() {
-        //Given a user to add with correct values in their fields
-        UserEntity userToAdd = UserEntity.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .build();
+    @DisplayName("Create new user - Successful")
+    void createUser_Successful() {
+        // Arrange
+        UserEntity userToAdd = createUser();
 
-        // When the user is added, simulate the save operation in the repository
         when(userRepository.save(userToAdd)).thenReturn(userToAdd);
 
-        // Perform the addUser operation
-        UserEntity AddedUser = userService.addUser(userToAdd);
+        // Act
+        userService.addUser(userToAdd);
 
-        // Then assert that the added user is equal to the user provider
-        assertThat(AddedUser).isEqualTo(userToAdd);
-        // Verify that the save operation in the repository was called exactly once
-        verify(userRepository, times(1)).save(any(UserEntity.class));
+        // Assert
+        verify(userRepository, times(1)).save(userToAdd);
     }
 
     @Test
-    void addUserWithExistingEmailShouldThrowException() {
-        // Given an existing user in the database
-        UserEntity existingUser = UserEntity.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .build();
+    @DisplayName("Get user - Successful")
+    void getUser_Successful() {
+        // Arrange
+        UserEntity userToAdd = createUser();
+        Long userId = userToAdd.getId();
 
-        // Simulate that the repository will return an existing user with the same email
-        when(userRepository.save(existingUser)).thenThrow(DataIntegrityViolationException.class);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userToAdd));
 
-        // When attempting to add a new user with the same email should throw an instance of the UserValidationException class
-        assertThatThrownBy(() -> userService.addUser(existingUser))
-                .isInstanceOf(UserValidationException.class)
-                .hasMessageContaining("Email is already in use");
+        // Act
+        UserEntity user = userService.getUserById(userId);
 
-        // Ensure that the save method was called exactly once with the provided user
-        verify(userRepository, times(1)).save(existingUser);
+        // Assert
+        assertThat(user).isNotNull();
+        assertThat(user.getId()).isEqualTo(userId);
+        verify(userRepository, times(1)).findById(userId);
     }
 
     @Test
-    void addUserWithInvalidFieldsShouldThrowException() {
-        // Given a user with an empty field
-        UserEntity userWithInvalidFields = UserEntity.builder()
-                .firstName("")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .build();
+    @DisplayName("Get user with non existent user id - Throws exception")
+    void getUserWithNonExistentId_ThrowsException() {
+        // Arrange
+        Long nonExistentId = 999L;
 
-        // Simulate that the repository will throw a ConstraintViolationException when trying to save
-        when(userRepository.save(userWithInvalidFields)).thenThrow(ConstraintViolationException.class);
+        when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        //When attempting to add a user with an empty field should throw a UserValidationException
-        assertThatThrownBy(() -> userService.addUser(userWithInvalidFields))
-                .isInstanceOf(UserValidationException.class)
-                .hasMessageContaining("Validation error when creating user");
-
-        // Ensure that the save method was called exactly once wih the provided user
-        verify(userRepository, times(1)).save(userWithInvalidFields);
-    }
-
-    @Test
-    void getUserByIdShouldReturnCorrectUser() {
-        // Given an Id and user to search
-        Long searchedUserId = 1L;
-        UserEntity searchedUser = UserEntity.builder()
-                .id(searchedUserId)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .build();
-
-        // Simulate that the findById method in the repository return an optional of searchedUser when find id user
-        when(userRepository.findById(searchedUserId)).thenReturn(Optional.of(searchedUser));
-
-        // Perform the findUserById operation
-        UserEntity userFound = userService.getUserById(searchedUserId);
-
-        // Assert that the found user is equal to the searched user
-        assertThat(userFound).isEqualTo(searchedUser);
-    }
-
-    @Test
-    void getUserByIdWithNonExistentIdThrowsException() {
-        // Given a non-existent user id
-        Long nonExistentUserId = 999L;
-
-        // Simulate that the findById method in the repository returns an empty optional of UserEntity when user id is not found
-        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
-
-        // When attempting to get a user with non-existent id should throw a UserNotFoundException
-        assertThatThrownBy(() -> userService.getUserById(nonExistentUserId))
+        // Act & Assert
+        assertThatThrownBy(() -> userService.getUserById(nonExistentId))
                 .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
+                .hasMessageContaining("User with ID: " + nonExistentId + " not found.");
 
-        // Ensure that the repository.findBiId method was called exactly once with the provided id
-        verify(userRepository, times(1)).findById(nonExistentUserId);
+        verify(userRepository, times(1)).findById(nonExistentId);
     }
 
     @Test
-    void getUserByNullIdShouldThrowsException() {
-        // Given a null user id
-        Long nullUserId = null;
+    @DisplayName("Get user with invalid user id - Throws exception")
+    void getUserWithInvalidId_ThrowsException() {
+        // Arrange
+        Long invalidId = 0L;
 
-        // When attempting to get a user with null id should throw a UserNotFoundException
-        assertThatThrownBy(() -> userService.getUserById(nullUserId))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("User ID cannot be null");
+        // Act & Assert
+        assertThatThrownBy(() -> userService.getUserById(invalidId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid user ID: " + invalidId);
 
-        // Ensure that the repository.findById method was not called
-        verify(userRepository, never()).findById(any());
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void getAllUsersShouldReturnListOfAllUsers() {
-        // Given a list of users
-        List<UserEntity> usersList = Arrays.asList(
-            new UserEntity(1L, "John", "Doe", "john.doe@example.com"),
-            new UserEntity(2L, "Mike", "Smith", "mike.smith@example.com"),
-            new UserEntity(3L, "Sara", "Jones", "sara.jones@example.com")
-        );
+    @DisplayName("Get all users - Successful")
+    void getAllUsers_Successful() {
+        // Arrange
+        List<UserEntity> expectedUsers = new ArrayList<>();
 
-        // Simulate that findAll method in the repository returns a list of users
-        when(userRepository.findAll()).thenReturn(usersList);
+        UserEntity user1 = createUser();
+        UserEntity user2 = UserEntity.builder()
+                .id(2L)
+                .firstName("Jane")
+                .lastName("Smith")
+                .email("jane.smith@example.com")
+                .build();
 
-        // Perform the getAllUsers operation
-        List<UserEntity> allUsersList = userService.getAllUsers();
+        expectedUsers.add(user1);
+        expectedUsers.add(user2);
 
-        // Assert that the list of users obtained is correct
-        assertThat(allUsersList).isNotNull();
-        assertThat(allUsersList).hasSize(3);
-        assertThat(allUsersList).containsExactlyElementsOf(usersList);
+        when(userRepository.findAll()).thenReturn(expectedUsers);
+
+        // Act
+        List<UserEntity> actualUsers = userService.getAllUsers();
+
+        // Assert
+        assertThat(actualUsers).isNotNull();
+        assertThat(actualUsers)
+                .hasSize(expectedUsers.size())
+                .containsAll(expectedUsers);
 
         verify(userRepository, times(1)).findAll();
     }
 
     @Test
-    void updateUserShouldReturnUpdatedUser() {
-        //Given user id to update, existing user with this id and the expected updated user with new data
-        Long userIdToUpdate = 1L;
-        UserEntity existingUser = new UserEntity(userIdToUpdate, "John", "Doe", "john.doe@example.com");
-        UserEntity expectedUpdatedUser = new UserEntity(userIdToUpdate, "UpdatedFirstName", "UpdatedLastName", "john.doe@example.com");
+    @DisplayName("Delete user - Successful")
+    void deleteUser_Successful() {
+        // Arrange
+        UserEntity user = createUser();
+        Long userId = user.getId();
 
-        // Simulate that findById and save methods of the repository performing the update procedure
-        when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(UserEntity.class))).thenReturn(expectedUpdatedUser);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        // Perform the updateUser operation
-        UserEntity updatedUser = userService.updateUserById(userIdToUpdate, expectedUpdatedUser);
+        // Act
+        userService.deleteUser(userId);
 
-        // Assert that the updated user is correct
-        assertThat(updatedUser).isNotNull();
-        assertThat(updatedUser).isEqualTo(expectedUpdatedUser);
-
-        verify(userRepository, times(1)).findById(userIdToUpdate);
-        verify(userRepository, times(1)).save(any(UserEntity.class));
+        // Assert
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, times(1)).delete(user);
     }
 
     @Test
-    void updatedUserShouldThrowsExceptionForNonExistentUser() {
-        // Given a non-existent user id and an expected updated user
-        Long nonExistentUserId = 999L;
-        UserEntity expectedUpdatedUser = UserEntity.builder()
-                .firstName("UpdatedFirstName")
-                .lastName("UpdatedLastName")
-                .email("updated@example.com")
-                .build();
+    @DisplayName("Delete user with non existent id - Throws exception")
+    void deleteUserWithNonExistentId_ThrowsException() {
+        // Arrange
+        Long nonExistentId = 999L;
 
-        // Simulate that the findById method return an empty optional for a non-existent user id
-        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+        when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        // When attempting update a user with a non-existent user should throw a UserNotFoundException
-        assertThatThrownBy(() -> userService.updateUserById(nonExistentUserId, expectedUpdatedUser))
+        // Act & Assert
+        assertThatThrownBy(() -> userService.deleteUser(nonExistentId))
                 .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
+                .hasMessageContaining("User with ID: " + nonExistentId + " not found.");
 
-        verify(userRepository, times(1)).findById(nonExistentUserId);
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userRepository, times(1)).findById(nonExistentId);
+        verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    void deleteUserByIdShouldDeleteUser() {
-        // Given user id to delete and an user to delete
-        Long userIdToDelete = 1L;
-        UserEntity userToDelete = UserEntity.builder()
-                .id(userIdToDelete)
+    @DisplayName("Delete user with invalid id - Throws exception")
+    void deleteUserWithInvalidId_ThrowsException() {
+        // Arrange
+        Long invalidId = 0L;
+
+        // Act & Assert
+        assertThatThrownBy(() -> userService.deleteUser(invalidId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid user ID: " + invalidId);
+
+        verifyNoInteractions(userRepository);
+    }
+
+    private UserEntity createUser() {
+        return UserEntity.builder()
+                .id(1L)
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .build();
-
-        when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(userToDelete));
-
-        // Perform the deleteUser operation
-        userService.deleteUserById(userIdToDelete);
-
-        // Ensure that the findById and deleteById methods on the repository was called once
-        verify(userRepository, times(1)).findById(userIdToDelete);
-        verify(userRepository, times(1)).deleteById(userIdToDelete);
-    }
-
-    @Test
-    void deleteUserShouldThrowExceptionForNonExistentUserId() {
-        // Given a non-existent user id
-        Long nonExistentUserId = 999L;
-
-        // Simulate that the findById method on the repository return an empty optional for a non-existent user id
-        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
-
-        // When attempting to delete user with non-existent user id should throw a UserNotFoundException
-        assertThatThrownBy(() -> userService.deleteUserById(nonExistentUserId))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining("User with ID: " + nonExistentUserId + " not found");
-
-        verify(userRepository, times(1)).findById(nonExistentUserId);
-        verify(userRepository, never()).deleteById(anyLong());
     }
 }

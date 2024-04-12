@@ -2,7 +2,9 @@ package com.apirest.controllers;
 
 import com.apirest.models.UserEntity;
 import com.apirest.servicies.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,16 +14,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@AutoConfigureMockMvc(addFilters = false)
 public class UserControllerTests {
     @Autowired
     private MockMvc mockMvc;
@@ -33,128 +36,122 @@ public class UserControllerTests {
     private ObjectMapper objectMapper;
 
     @Test
-    void createUserShouldAddNewUser() throws Exception {
-        // Given a user to be created
-        UserEntity userToCreate = UserEntity.builder()
+    @DisplayName("Create user - Successful")
+    public void createUser_Successful() throws Exception {
+        // Arrange
+        UserEntity user = createUser();
+
+        // Act & Assert
+        mockMvc.perform(post("/api/users/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(user)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User created successfully"));
+
+        verify(userService, times(1)).addUser(user);
+    }
+
+    @Test
+    @DisplayName("Get user - Successful")
+    public void getUser_Successful() throws Exception {
+        // Arrange
+        UserEntity user = createUser();
+        Long userId = user.getId();
+
+        when(userService.getUserById(userId)).thenReturn(user);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/users/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.firstName").value(user.getFirstName()))
+                .andExpect(jsonPath("$.lastName").value(user.getLastName()))
+                .andExpect(jsonPath("$.email").value(user.getEmail()));
+
+        verify(userService, times(1)).getUserById(userId);
+    }
+
+    @Test
+    @DisplayName("Get all users - Successful")
+    public void getAllUsers_Successful() throws Exception {
+        // Arrange
+        List<UserEntity> userList = new ArrayList<>();
+
+        UserEntity user1 = createUser();
+        UserEntity user2 = UserEntity.builder()
+                .id(2L)
+                .firstName("Jane")
+                .lastName("Smith")
+                .email("jane.smith@example.com")
+                .build();
+
+        userList.add(user1);
+        userList.add(user2);
+
+        when(userService.getAllUsers()).thenReturn(userList);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(userList.size())))
+                .andExpect(jsonPath("$[0].id").value(userList.get(0).getId()))
+                .andExpect(jsonPath("$[0].firstName").value(userList.get(0).getFirstName()))
+                .andExpect(jsonPath("$[0].lastName").value(userList.get(0).getLastName()))
+                .andExpect(jsonPath("$[0].email").value(userList.get(0).getEmail()))
+
+                .andExpect(jsonPath("$[1].id").value(userList.get(1).getId()))
+                .andExpect(jsonPath("$[1].firstName").value(userList.get(1).getFirstName()))
+                .andExpect(jsonPath("$[1].lastName").value(userList.get(1).getLastName()))
+                .andExpect(jsonPath("$[1].email").value(userList.get(1).getEmail()));
+
+        verify(userService, times(1)).getAllUsers();
+    }
+
+    @Test
+    @DisplayName("Update user - Successful")
+    public void updateUser_Successful() throws Exception {
+        // Arrange
+        UserEntity updatedUser = createUser();
+        Long userId = updatedUser.getId();
+
+        // Act & Assert
+        mockMvc.perform(put("/api/users/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(updatedUser)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User updated successfully"));
+
+        verify(userService, times(1)).updateUserById(userId, updatedUser);
+    }
+
+    @Test
+    @DisplayName("Delete user - Successful")
+    public void deleteUser_Successful() throws Exception {
+        // Arrange
+        Long userId = 1L;
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/users/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User deleted successfully"));
+
+        verify(userService, times(1)).deleteUser(userId);
+    }
+
+    private UserEntity createUser() {
+        return UserEntity.builder()
+                .id(1L)
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .build();
-
-        when(userService.addUser(any(UserEntity.class))).thenReturn(userToCreate);
-
-        // When making a POST request to "/api/users" with JSON payload
-        ResultActions result = mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(userToCreate)));
-
-        // Then expect a status of 201 and JSON object with the created user
-        result.andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.firstName").value("John"))
-                .andExpect(jsonPath("$.lastName").value("Doe"))
-                .andExpect(jsonPath("$.email").value("john.doe@example.com"));
-
-        // Verify that the addUser method in the service was called exactly once
-        verify(userService, times(1)).addUser(any(UserEntity.class));
     }
 
-    @Test
-    void getUserShouldReturnUser() throws Exception {
-        // Given
-        Long userIdToGet = 1L;
-        UserEntity userToGet = UserEntity.builder()
-                .id(userIdToGet)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .build();
-
-        when(userService.getUserById(userIdToGet)).thenReturn(userToGet);
-
-        // When
-        ResultActions response = mockMvc.perform(get("/api/users/{userIdToCreate}", userIdToGet)
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // Then
-        response.andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userIdToGet))
-                .andExpect(jsonPath("$.firstName").value("John"))
-                .andExpect(jsonPath("$.lastName").value("Doe"))
-                .andExpect(jsonPath("$.email").value("john.doe@example.com"));
-
-        // Verify that the service method was called with the correct argument
-        verify(userService, times(1)).getUserById(userIdToGet);
-    }
-
-    @Test
-    void getAllUsersShouldReturnListOfUsers() throws Exception {
-        // Given
-        List<UserEntity> usersList = Arrays.asList(
-                UserEntity.builder().id(1L).firstName("John").lastName("Doe").email("john.doe@example.com").build(),
-                UserEntity.builder().id(2L).firstName("Mike").lastName("Smith").email("mike.smith@example.com").build()
-        );
-
-        when(userService.getAllUsers()).thenReturn(usersList);
-
-        // When
-        ResultActions result = mockMvc.perform(get("/api/users")
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // Then
-        result.andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.size()").value(usersList.size()))
-                .andExpect(jsonPath("$[0].id").value(usersList.get(0).getId()))
-                .andExpect(jsonPath("$[0].firstName").value(usersList.get(0).getFirstName()))
-                .andExpect(jsonPath("$[0].lastName").value(usersList.get(0).getLastName()))
-                .andExpect(jsonPath("$[0].email").value(usersList.get(0).getEmail()))
-                .andExpect(jsonPath("$[1].id").value(usersList.get(1).getId()))
-                .andExpect(jsonPath("$[1].firstName").value(usersList.get(1).getFirstName()))
-                .andExpect(jsonPath("$[1].lastName").value(usersList.get(1).getLastName()))
-                .andExpect(jsonPath("$[1].email").value(usersList.get(1).getEmail()));
-    }
-
-    @Test
-    void updateUserShouldReturnUpdatedUser() throws Exception {
-        // Given
-        Long userIdToUpdate = 1L;
-        UserEntity updatedUser = UserEntity.builder()
-                .id(userIdToUpdate)
-                .firstName("UpdatedFirstName")
-                .lastName("UpdatedLastName")
-                .email("updated.email@example.com")
-                .build();
-
-        when(userService.updateUserById(eq(userIdToUpdate), any(UserEntity.class))).thenReturn(updatedUser);
-
-        // When
-        ResultActions result = mockMvc.perform(put("/api/users/{id}/update", userIdToUpdate)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updatedUser)));
-
-        // Then
-        result.andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(updatedUser.getId()))
-                .andExpect(jsonPath("$.firstName").value(updatedUser.getFirstName()))
-                .andExpect(jsonPath("$.lastName").value(updatedUser.getLastName()))
-                .andExpect(jsonPath("$.email").value(updatedUser.getEmail()));
-    }
-
-    @Test
-    void deleteUserShouldReturnOk() throws Exception {
-        // Given
-        Long userIdToDelete = 1L;
-
-        // When
-        ResultActions result = mockMvc.perform(delete("/api/users/{id}/delete", userIdToDelete)
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // Then
-        result.andExpect(status().isOk());
-
-        // Verify that the service method was called with the correct argument
-        verify(userService, times(1)).deleteUserById(eq(userIdToDelete));
+    private String asJsonString(Object obj) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(obj);
     }
 }
