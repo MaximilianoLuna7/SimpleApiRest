@@ -1,17 +1,15 @@
 package com.apirest.servicies;
 
+import com.apirest.exceptions.DataBaseErrorException;
 import com.apirest.exceptions.UserNotFoundException;
-import com.apirest.exceptions.UserValidationException;
 import com.apirest.models.UserEntity;
 import com.apirest.repositories.UserRepository;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class UserService {
@@ -19,54 +17,60 @@ public class UserService {
     private UserRepository userRepository;
 
     @Transactional
-    public UserEntity addUser(UserEntity userToAdd) {
-        validateUser(userToAdd);
+    public void addUser(UserEntity userToAdd) {
         try {
-            return userRepository.save(userToAdd);
-        } catch (DataIntegrityViolationException e) {
-            throw new UserValidationException("Email is already in use.", e);
-        } catch (ConstraintViolationException e) {
-            throw new UserValidationException("Validation error when creating user", e);
+            userRepository.save(userToAdd);
+        } catch (DataAccessException ex) {
+            throw new DataBaseErrorException("Error creating user: " + ex.getMessage());
         }
     }
 
-    @Transactional(readOnly = true)
-    public UserEntity getUserById(Long searchedUserId) {
-        Objects.requireNonNull(searchedUserId, "User ID cannot be null.");
+    public UserEntity getUserById(Long userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID: " + userId);
+        }
 
-        return userRepository.findById(searchedUserId)
-                .orElseThrow(() -> new  UserNotFoundException("User with ID: " + searchedUserId + " not found."));
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new  UserNotFoundException("User with ID: " + userId + " not found."));
     }
 
-    @Transactional(readOnly = true)
     public List<UserEntity> getAllUsers() {
-        return userRepository.findAll();
+        try {
+            return userRepository.findAll();
+        } catch (DataAccessException ex) {
+            throw new DataBaseErrorException("Error listing users: " + ex.getMessage());
+        }
     }
 
     @Transactional
-    public UserEntity updateUserById(Long userIdToUpdate, UserEntity updatedUser) {
-        Objects.requireNonNull(userIdToUpdate, "User ID cannot be null.");
+    public void updateUserById(Long userIdToUpdate, UserEntity updatedUser) {
+        if (userIdToUpdate == null || userIdToUpdate <= 0) {
+            throw new IllegalArgumentException("Invalid user ID: " + userIdToUpdate);
+        }
 
-        UserEntity userToUpdate = getUserById(userIdToUpdate);
-        validateUser(updatedUser);
-
-        updateUserData(userToUpdate, updatedUser);
-        return userRepository.save(userToUpdate);
+        try {
+            UserEntity userToUpdate = getUserById(userIdToUpdate);
+            updateUserData(userToUpdate, updatedUser);
+            userRepository.save(userToUpdate);
+        } catch (DataAccessException ex) {
+            throw new DataBaseErrorException("Error updating user: " + ex.getMessage());
+        }
     }
-
 
     @Transactional
-    public void deleteUserById(Long userIdToDelete) {
-        getUserById(userIdToDelete);
+    public void deleteUser(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID: " + userId);
+        }
 
-        userRepository.deleteById(userIdToDelete);
-    }
+        try {
+            UserEntity userToDelete = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID: " + userId + " not found."));
 
-    private void validateUser(UserEntity userToValidate) {
-        Objects.requireNonNull(userToValidate, "The user cannot be null.");
-        Objects.requireNonNull(userToValidate.getFirstName(), "The 'firstName' field cannot be null.");
-        Objects.requireNonNull(userToValidate.getLastName(), "The 'lastName' field cannot be null.");
-        Objects.requireNonNull(userToValidate.getEmail(), "The 'email' field cannot be null.");
+            userRepository.delete(userToDelete);
+        } catch (DataAccessException ex) {
+            throw new DataBaseErrorException("Error deleting user: " + ex.getMessage());
+        }
     }
 
     private void updateUserData(UserEntity userToUpdate, UserEntity updatedUser) {

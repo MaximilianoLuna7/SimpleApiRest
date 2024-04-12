@@ -20,16 +20,16 @@ public class UserEntity {
     @Column(name = "user_id")
     private Long id;
 
-    @NotBlank
+    @NotBlank(message = "First name must not be blank")
     @Column(name = "first_name")
     private String firstName;
 
-    @NotBlank
+    @NotBlank(message = "Last name must not be blank")
     @Column(name = "last_name")
     private String lastName;
 
-    @NotBlank
-    @Email
+    @NotBlank(message = "Email must not be blank")
+    @Email(message = "Invalid email format")
     @Column(name = "email", unique = true)
     private String email;
 }

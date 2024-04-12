@@ -3,7 +3,6 @@ package com.apirest.controllers;
 import com.apirest.models.UserEntity;
 import com.apirest.servicies.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +14,10 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
-    public ResponseEntity<UserEntity> createUser(@RequestBody UserEntity userToCreate) {
-        UserEntity createdUser = userService.addUser(userToCreate);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    @PostMapping("/create")
+    public ResponseEntity<String> createUser(@RequestBody UserEntity userToCreate) {
+        userService.addUser(userToCreate);
+        return ResponseEntity.ok("User created successfully");
     }
 
     @GetMapping("/{userId}")
@@ -33,15 +32,15 @@ public class UserController {
         return ResponseEntity.ok(usersList);
     }
 
-    @PutMapping("/{id}/update")
-    public ResponseEntity<UserEntity> updateUser(@PathVariable Long id, @RequestBody UserEntity updatedUser) {
-        UserEntity user = userService.updateUserById(id, updatedUser);
-        return ResponseEntity.ok(user);
+    @PutMapping("/{userId}")
+    public ResponseEntity<String> updateUser(@PathVariable Long userId, @RequestBody UserEntity updatedUser) {
+        userService.updateUserById(userId, updatedUser);
+        return ResponseEntity.ok("User updated successfully");
     }
 
-    @DeleteMapping("/{id}/delete")
-    public ResponseEntity<String > deleteUserById(@PathVariable Long id) {
-        userService.deleteUserById(id);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<String > deleteUserById(@PathVariable Long userId) {
+        userService.deleteUser(userId);
         return ResponseEntity.ok("User deleted successfully");
     }
 }
